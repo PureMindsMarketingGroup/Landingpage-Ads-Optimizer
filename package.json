@@ -1,0 +1,14 @@
+{
+  "name": "landingpage-ads-optimizer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interne CRO-tool: analyseert de message match tussen Google Ads en landingspagina.",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0",
+    "htmlparser2": "^12.0.0"
+  }
+}

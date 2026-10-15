@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Landingpage &amp; Ads Optimizer · Pure Minds</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <meta name="theme-color" content="#1ab9e2" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Huisstijl van pureminds.nl: Open Sans, cyaan, magenta voor de hoofdactie, groen voor "klaar".
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['"Open Sans"', 'ui-sans-serif', 'system-ui', 'Segoe UI', 'Arial', 'sans-serif'] },
+          colors: {
+            pm: {
+              cyan: '#1ab9e2', tint: '#e8f7fc', blue: '#1b71a8', magenta: '#b61b50',
+              green: '#009670', ink: '#303030', muted: '#5c6670', line: '#e1e7ec', canvas: '#edf3f7',
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
+  <style>
+    /* --- Achtergrond: zacht verloop en zeshoeklijnen, zoals de hero van pureminds.nl --- */
+    body { background: #fff; }
+    .bg-deco { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      background:
+        radial-gradient(42rem 30rem at 6% -4%, rgba(26, 185, 226, .16), transparent 70%),
+        radial-gradient(36rem 26rem at 100% 0%, rgba(182, 27, 80, .07), transparent 70%),
+        linear-gradient(#fff, #eef9ff);
+    }
+    .bg-deco::after { content: ''; position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='156' height='270' viewBox='0 0 155.88 270'%3E%3Cpath d='M0 90 77.94 45 155.88 90v90L77.94 225 0 180zM77.94 0v45m0 180v45' fill='none' stroke='%2390a4b4' stroke-opacity='.22'/%3E%3C/svg%3E") 0 0 / 156px 270px;
+      -webkit-mask-image: linear-gradient(#000, transparent 75%); mask-image: linear-gradient(#000, transparent 75%);
+    }
+
+    /* --- Bouwstenen --- */
+    .card { background: #fff; border: 1px solid #e1e7ec; box-shadow: 0 1px 2px rgba(16, 40, 60, .05), 0 24px 48px -32px rgba(16, 40, 60, .35); }
+    .hex { clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+
+    /* Hoekige knoppen met kleine letters, zoals op de site */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border: 2px solid transparent; font-weight: 700; line-height: 1.25; white-space: nowrap; transition: background-color .15s, border-color .15s, color .15s, transform .1s; }
+    .btn:focus-visible { outline: 3px solid rgba(26, 185, 226, .5); outline-offset: 2px; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .btn-primary { background: #b61b50; color: #fff; }
+    .btn-primary:not(:disabled):hover { background: #9c1644; }
+    .btn-primary:not(:disabled):active { transform: translateY(1px); }
+    .btn-outline { background: #fff; border-color: #1ab9e2; color: #303030; }
+    .btn-outline:not(:disabled):hover { background: #1ab9e2; }
+    .btn-sm { padding: .4rem .7rem; font-size: .8125rem; }
+    .btn svg { flex: none; }
+
+    .input { width: 100%; border: 1px solid #d5dee5; background: #fff; padding: .625rem .875rem; font-size: .875rem; color: #303030; transition: border-color .15s, box-shadow .15s; }
+    .input::placeholder { color: #8d99a3; }
+    .input:focus { outline: none; border-color: #1ab9e2; box-shadow: 0 0 0 4px rgba(26, 185, 226, .18); }
+
+    /* Invulstatus per veld: nummer in een zeshoek wordt een groen vinkje zodra het veld gevuld is */
+    .field-badge { width: 1.45rem; height: 1.675rem; flex: none; display: grid; place-items: center; font-size: .75rem; font-weight: 800; background: #e8f7fc; color: #1b71a8; transition: background-color .2s, color .2s; }
+    .is-filled .field-badge { background: #009670; color: #fff; }
+    .is-filled .field-num { display: none; }
+    .field:not(.is-filled) .field-check { display: none; }
+
+    /* Voortgangsstappen boven het rapport */
+    .step { background: none; border: 0; padding: 0; font: inherit; cursor: default; display: flex; align-items: center; gap: .4rem; color: #8d99a3; white-space: nowrap; }
+    .step-dot { width: 1.1rem; height: 1.27rem; display: grid; place-items: center; font-size: .625rem; font-weight: 800; background: #eef2f5; color: #8d99a3; flex: none; }
+    .step[data-state="active"] { color: #303030; font-weight: 700; }
+    .step[data-state="active"] .step-dot { background: #1ab9e2; color: #303030; }
+    .step[data-state="done"] { color: #303030; cursor: pointer; }
+    .step[data-state="done"]:hover { color: #1b71a8; text-decoration: underline; text-underline-offset: 3px; }
+    .step[data-state="done"] .step-dot { background: #009670; color: #fff; }
+    .step[data-state="done"] .step-num { display: none; }
+    .step:not([data-state="done"]) .step-check { display: none; }
+
+    #meta-row:not(:has(> :not(.hidden))) { display: none; }
+
+    .shimmer { background: linear-gradient(90deg, #eef3f6 0%, #e1eaf0 50%, #eef3f6 100%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* Google Docs-uitleg onder de knoppen */
+    .popover { position: absolute; right: 1rem; top: calc(100% - .25rem); z-index: 30; width: min(21rem, calc(100vw - 2.5rem)); background: #fff; border: 1px solid #e1e7ec; border-top: 3px solid #1ab9e2; box-shadow: 0 18px 40px -16px rgba(16, 40, 60, .35); padding: 1rem 1.1rem; }
+    .popover kbd { font-family: inherit; font-size: .75rem; font-weight: 700; border: 1px solid #d5dee5; border-bottom-width: 2px; padding: 0 .3rem; background: #f7fafc; color: #303030; }
+
+    /* --- Het rapport als document --- */
+    .doc { position: relative; max-width: 50rem; margin: 0 auto; background: #fff; padding: 2.25rem 2.75rem 3rem; color: #303030; font-size: .9375rem;
+      box-shadow: 0 1px 2px rgba(16, 40, 60, .06), 0 12px 32px -14px rgba(16, 40, 60, .25); }
+    .doc::before { content: ''; position: absolute; inset: 0 0 auto; height: 5px; background: linear-gradient(90deg, #1ab9e2, #005aaf); }
+    .doc-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+    .doc-logo { height: 2.4rem; width: auto; }
+    .doc-kicker { text-align: right; font-size: .75rem; line-height: 1.5; color: #5c6670; }
+    .doc-kicker strong { display: block; font-size: .6875rem; font-weight: 800; letter-spacing: .16em; color: #1b71a8; }
+    .doc-title { margin: 2rem 0 0; font-size: 2rem; line-height: 1.15; font-weight: 700; letter-spacing: -.025em; color: #303030; overflow-wrap: anywhere; }
+    .doc-dot { color: #1ab9e2; }
+    .doc-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .75rem 2rem; margin-top: 1.25rem; }
+    .doc-meta dt { font-size: .6875rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #5c6670; }
+    .doc-meta dd { margin-top: .1rem; font-size: .875rem; font-weight: 600; overflow-wrap: anywhere; }
+    .doc-scores { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .75rem; margin-top: 1.5rem; }
+    .score-tile { border: 1px solid #e1e7ec; border-left: 4px solid; padding: .75rem 1rem .9rem; }
+    .score-label { font-size: .6875rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #5c6670; }
+    .score-value { margin-top: .1rem; font-size: 1.75rem; line-height: 1.15; font-weight: 700; letter-spacing: -.02em; }
+    .score-value small { font-size: .875rem; font-weight: 600; letter-spacing: 0; color: #5c6670; }
+    .score-bar { margin-top: .5rem; height: 5px; background: #eef2f5; }
+    .score-bar span { display: block; height: 100%; }
+
+    .doc-body { margin-top: 1.75rem; border-top: 1px solid #e1e7ec; }
+    .doc-body h2 { display: flex; align-items: center; gap: .75rem; margin: 2.5rem 0 1rem; font-size: 1.375rem; line-height: 1.25; font-weight: 700; letter-spacing: -.015em; scroll-margin-top: 9rem; }
+    .doc-num { flex: none; display: grid; place-items: center; width: 2rem; height: 2.3rem; background: linear-gradient(135deg, #1ab9e2, #005aaf); color: #fff; font-size: .9375rem; font-weight: 800; letter-spacing: 0;
+      clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+    .doc-body h3 { margin: 1.75rem 0 .5rem; padding-top: 1.25rem; border-top: 1px dashed #e1e7ec; font-size: 1.0625rem; line-height: 1.4; font-weight: 700; }
+    .doc-body h2 + h3 { margin-top: 0; padding-top: 0; border-top: 0; }
+    .doc-sub-num { color: #1b71a8; }
+    .doc-body p { margin: .7rem 0; line-height: 1.7; }
+    .doc-body ul, .doc-body ol { margin: .7rem 0; padding-left: 1.4rem; }
+    .doc-body li { margin: .35rem 0; line-height: 1.65; }
+    .doc-body ol { list-style: decimal; }
+    .doc-body ol > li::marker { color: #1b71a8; font-weight: 700; }
+    .doc-body ul > li { position: relative; list-style: none; }
+    .doc-body ul > li::before { content: ''; position: absolute; left: -1.05rem; top: .6em; width: .45rem; height: .52rem; background: #1ab9e2; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+    .doc-body ul ul > li::before { background: #b5c2cb; }
+    .doc-body li.doc-levels { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+    .doc-body li.doc-levels::before { display: none; }
+    .doc-body strong { font-weight: 700; }
+    .doc-body a { color: #1b71a8; text-decoration: underline; text-underline-offset: 2px; }
+    .doc-body code { font-family: inherit; font-size: .875em; font-weight: 700; background: #fbe8ee; color: #9e1744; padding: .05rem .35rem; }
+    .doc-body pre { margin: .9rem 0; padding: .85rem 1rem; background: #f7fafc; border: 1px solid #e1e7ec; overflow-x: auto; }
+    .doc-body pre code { background: none; color: inherit; padding: 0; font-weight: 400; font-family: ui-monospace, Consolas, monospace; }
+    .doc-body blockquote { margin: 1rem 0; padding: .7rem 1rem; border-left: 4px solid #1ab9e2; background: #f2fbfe; }
+    .doc-body hr { border: 0; border-top: 1px solid #e1e7ec; margin: 2rem 0; }
+    .doc-body .table-wrap { overflow-x: auto; margin: 1rem 0 1.25rem; }
+    .doc-body table { width: 100%; border-collapse: collapse; font-size: .8125rem; line-height: 1.55; }
+    .doc-body th { background: #e8f7fc; border-bottom: 2px solid #1ab9e2; padding: .6rem .75rem; text-align: left; vertical-align: bottom; font-weight: 700; }
+    .doc-body td { border-bottom: 1px solid #e1e7ec; padding: .6rem .75rem; vertical-align: top; }
+    .doc-body tbody tr:nth-child(even) td { background: #f7fafc; }
+    .doc-body .col-match { white-space: nowrap; }
+    .pill { display: inline-block; padding: .1rem .5rem; font-size: .75rem; line-height: 1.5; white-space: nowrap; }
+    .pill strong { font-weight: 700; }
+    .pill-key { font-weight: 600; opacity: .8; }
+    .doc-mark { font-weight: 800; }
+
+    /* Cursor tijdens het streamen */
+    .streaming #report-output .doc-body > *:last-child::after { content: '▍'; color: #1ab9e2; animation: blink 1s steps(2) infinite; margin-left: 2px; }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    @media (max-width: 639px) {
+      .doc { padding: 1.75rem 1.25rem 2.25rem; font-size: .875rem; }
+      .doc-logo { height: 2rem; }
+      .doc-title { font-size: 1.6rem; }
+    }
+    @media (min-width: 1024px) {
+      .doc-body h2 { scroll-margin-top: 1.25rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .shimmer, .animate-spin { animation: none; }
+    }
+
+    /* Ctrl+P als terugvaloptie naast de downloads: alleen het document */
+    @media print {
+      html, body, main, #report-card, #report-scroll { height: auto !important; overflow: visible !important; display: block !important; }
+      body { background: #fff; }
+      .bg-deco, #top-bar, header, #form-column, #report-head, #report-placeholder { display: none !important; }
+      main { max-width: none; padding: 0; margin: 0; }
+      #report-card, #report-scroll { border: 0; box-shadow: none; background: #fff; padding: 0 !important; }
+      .doc { box-shadow: none; max-width: none; padding: 0; }
+      .doc::before { display: none; }
+      .doc-body h2, .doc-body h3 { break-after: avoid; }
+      .doc-body tr, .doc-body li, .score-tile { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body class="text-pm-ink antialiased font-sans lg:h-screen lg:flex lg:flex-col lg:overflow-hidden">
+  <div class="bg-deco" aria-hidden="true"></div>
+
+  <!-- Cyaan balk, zoals bovenaan pureminds.nl -->
+  <div id="top-bar" class="flex-none bg-pm-cyan px-4 py-1.5 text-center text-xs font-semibold text-pm-ink">
+    <a href="https://www.pureminds.nl/" target="_blank" rel="noopener" class="underline underline-offset-2 hover:no-underline">pure minds</a>
+    <span class="mx-1.5">|</span>interne tool: CRO briefing<span class="hidden sm:inline"> voor Google Ads en landingspagina's</span>
+  </div>
+
+  <header class="flex-none border-b border-pm-line bg-white/85 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-6">
+      <div class="flex items-center gap-4 min-w-0">
+        <img src="pureminds-logo.webp" alt="Pure Minds" width="106" height="39" class="h-[2.4rem] w-auto flex-none" />
+        <span class="hidden sm:block h-9 w-px bg-pm-line" aria-hidden="true"></span>
+        <div class="hidden sm:block min-w-0">
+          <h1 class="text-[15px] font-bold leading-tight tracking-tight">Landingpage &amp; Ads Optimizer</h1>
+          <p class="truncate text-xs text-pm-muted">Sluiten je advertentie en landingspagina op elkaar aan? Binnen twee minuten een briefing.</p>
+        </div>
+      </div>
+      <p class="hidden lg:block flex-none text-[13px] font-semibold">adviesbriefing<span class="font-normal text-pm-muted"> · geen vervanging voor A/B-testen</span></p>
+    </div>
+  </header>
+
+  <main class="w-full max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5 lg:py-4 grid gap-5 lg:gap-6 lg:grid-cols-5 lg:flex-1 lg:min-h-0">
+
+    <!-- Formulier -->
+    <section id="form-column" class="min-w-0 lg:col-span-2 lg:min-h-0">
+      <form id="optimizer-form" class="card border-t-[3px] border-t-pm-cyan p-5 sm:p-6 lg:p-5 flex flex-col gap-5 lg:gap-3.5 lg:h-full lg:overflow-y-auto">
+        <div class="sm:hidden">
+          <h1 class="text-base font-bold leading-tight">Landingpage &amp; Ads Optimizer</h1>
+          <p class="text-xs text-pm-muted">Binnen twee minuten een CRO briefing.</p>
+        </div>
+        <h2 class="flex-none text-xl font-bold tracking-tight">Check je campagne<span class="text-pm-cyan">.</span></h2>
+
+        <div class="field flex flex-col lg:flex-1">
+          <label for="landingpage" class="flex items-center gap-2.5 text-sm font-bold mb-2">
+            <span class="field-badge hex">
+              <span class="field-num">1</span>
+              <svg class="field-check h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.58l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+            </span>
+            Landingspagina
+          </label>
+          <textarea id="landingpage" name="landingpage" rows="2" required
+            placeholder="www.voorbeeld.nl/offerte&#10;&#10;of plak de volledige paginatekst: H1, USP's, body copy, CTA-teksten, formuliervelden..."
+            class="input h-32 lg:h-auto lg:flex-1 lg:min-h-[4.5rem] lg:resize-none"></textarea>
+          <p id="landingpage-hint" class="mt-1.5 text-xs text-pm-muted">Een URL haalt de tool zelf op. Werkt de pagina volledig op JavaScript, plak dan de tekst.</p>
+        </div>
+
+        <div class="field flex flex-col lg:flex-[1.4]">
+          <label for="ads-data" class="flex items-center gap-2.5 text-sm font-bold mb-2">
+            <span class="field-badge hex">
+              <span class="field-num">2</span>
+              <svg class="field-check h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.58l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+            </span>
+            Google Ads gegevens
+          </label>
+          <textarea id="ads-data" name="adsData" rows="2" required
+            placeholder="Koppen:&#10;1. ...&#10;2. ...&#10;&#10;Beschrijvingen:&#10;1. ...&#10;&#10;Focus-trefwoorden:&#10;- ..."
+            class="input h-44 lg:h-auto lg:flex-1 lg:min-h-[4.5rem] lg:resize-none"></textarea>
+          <p class="mt-1.5 text-xs text-pm-muted">Koppen, beschrijvingen en focus-trefwoorden van de advertentiegroep.</p>
+        </div>
+
+        <div class="field flex-none">
+          <label for="conversion-goal" class="flex items-center gap-2.5 text-sm font-bold mb-2">
+            <span class="field-badge hex">
+              <span class="field-num">3</span>
+              <svg class="field-check h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.58l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+            </span>
+            Conversiedoel
+          </label>
+          <input type="text" id="conversion-goal" name="conversionGoal" required
+            placeholder="Bijv. offerteaanvraag via formulier" class="input" />
+          <p class="mt-1.5 text-xs text-pm-muted">Wat moet de bezoeker precies doen?</p>
+        </div>
+
+        <div class="flex-none space-y-2 pt-1">
+          <button type="submit" id="submit-btn" class="btn btn-primary w-full px-5 py-3.5 text-[15px]">
+            <svg id="submit-spinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+            </svg>
+            <span id="submit-label">genereer CRO briefing</span>
+            <svg id="submit-arrow" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+          </button>
+          <div class="flex items-center justify-between gap-3 text-xs text-pm-muted">
+            <span>Duurt ongeveer twee minuten &middot; verschijnt live</span>
+            <button type="reset" id="reset-btn"
+              class="whitespace-nowrap px-2 py-1.5 -mr-2 font-semibold text-pm-muted hover:text-pm-magenta transition disabled:opacity-40 disabled:pointer-events-none">
+              alles wissen
+            </button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Output -->
+    <section class="min-w-0 lg:col-span-3 lg:min-h-0">
+      <div id="report-card" class="card flex flex-col lg:h-full scroll-mt-4">
+        <div id="report-head" class="sticky top-0 z-10 lg:relative flex-none border-b border-pm-line bg-white/95 backdrop-blur px-4 sm:px-5 py-3">
+          <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <div class="flex items-center gap-2.5">
+              <h2 class="text-[15px] font-bold">Analyserapport</h2>
+              <span id="status-badge" role="status" aria-live="polite" class="hidden px-2 py-0.5 text-xs font-semibold tabular-nums"></span>
+            </div>
+            <div id="report-actions" class="flex flex-wrap items-center gap-2">
+              <button type="button" id="docs-btn" class="hidden btn btn-outline btn-sm"
+                title="Kopieert het rapport met opmaak, om te plakken in Google Docs, Word of e-mail">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12"/><path d="M5 15H3V3h12v2"/></svg>
+                <span>google docs</span>
+              </button>
+              <button type="button" id="word-btn" class="hidden btn btn-outline btn-sm"
+                title="Bewerkbaar Word-bestand (.docx) in de huisstijl; opent ook in Google Docs">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>
+                <span>word</span>
+              </button>
+              <button type="button" id="pdf-btn" class="hidden btn btn-primary btn-sm"
+                title="Opgemaakte PDF met logo, selecteerbare tekst en paginanummers">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>
+                <span>pdf</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Voortgang tijdens het schrijven; daarna springen de stappen naar hun sectie -->
+          <div id="meta-row" class="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <ol id="progress" class="hidden flex min-w-0 gap-x-4 gap-y-2 overflow-x-auto text-xs">
+              <li><button type="button" class="step" data-step="1"><span class="step-dot hex"><span class="step-num">1</span><svg class="step-check h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.58l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg></span>Samenvatting</button></li>
+              <li><button type="button" class="step" data-step="2"><span class="step-dot hex"><span class="step-num">2</span><svg class="step-check h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.58l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg></span>Message match</button></li>
+              <li><button type="button" class="step" data-step="3"><span class="step-dot hex"><span class="step-num">3</span><svg class="step-check h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.58l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg></span>Verbeterpunten</button></li>
+              <li><button type="button" class="step" data-step="4"><span class="step-dot hex"><span class="step-num">4</span><svg class="step-check h-2.5 w-2.5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-8 8a1 1 0 01-1.4 0l-4-4a1 1 0 011.4-1.4L8 12.58l7.3-7.3a1 1 0 011.4 0z" clip-rule="evenodd"/></svg></span>Actieplan</button></li>
+            </ol>
+            <div id="scores" class="hidden flex items-center gap-2"></div>
+          </div>
+
+          <div id="docs-popover" class="popover hidden" role="dialog" aria-labelledby="docs-popover-title">
+            <button type="button" id="docs-close" class="absolute right-2 top-2 grid h-7 w-7 place-items-center text-pm-muted hover:text-pm-ink" aria-label="Sluiten">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+            <p id="docs-popover-title" class="text-sm font-bold">Gekopieerd met opmaak<span class="text-pm-cyan">.</span></p>
+            <p class="mt-1 text-sm leading-6 text-pm-muted">Open een nieuw Google Doc en plak met <kbd id="paste-key">Ctrl</kbd>+<kbd>V</kbd>. Werkt ook in Word en e-mail.</p>
+            <a id="docs-link" href="https://docs.new" target="_blank" rel="noopener" class="btn btn-primary btn-sm mt-3">
+              open nieuw google doc
+              <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+            </a>
+            <p class="mt-3 border-t border-pm-line pt-3 text-xs leading-5 text-pm-muted">Liever met logo en paginanummers? Download het Word-bestand en open het in Google Drive.</p>
+          </div>
+        </div>
+
+        <!-- Het rapport als document; scrolt zelf op desktop -->
+        <div id="report-scroll" class="bg-pm-canvas p-3 sm:p-5 lg:flex-1 lg:min-h-0 lg:overflow-y-auto">
+          <div id="report-placeholder" class="min-h-[420px] lg:min-h-0"></div>
+          <article id="report-output" class="doc hidden"></article>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Lege staat: laat vooraf zien hoe het document eruitziet -->
+  <template id="empty-state">
+    <div class="doc">
+      <div class="doc-top">
+        <img src="pureminds-logo.webp" alt="Pure Minds" class="doc-logo" />
+        <p class="doc-kicker"><strong>CRO BRIEFING</strong>voorbeeld</p>
+      </div>
+      <h2 class="doc-title">Je briefing verschijnt hier<span class="doc-dot">.</span></h2>
+      <p class="mt-3 max-w-md text-sm leading-6 text-pm-muted">Vul de drie velden in. Je krijgt één document dat je direct doorzet naar copywriter, designer of developer.</p>
+      <ol class="mt-7 grid gap-3 sm:grid-cols-2">
+        <li class="flex gap-3 border border-pm-line p-4">
+          <span class="doc-num !h-[1.85rem] !w-[1.6rem] !text-xs">1</span>
+          <span><span class="block text-sm font-bold">Executive Summary</span><span class="block text-xs leading-5 text-pm-muted">Belangrijkste bevindingen en een score.</span></span>
+        </li>
+        <li class="flex gap-3 border border-pm-line p-4">
+          <span class="doc-num !h-[1.85rem] !w-[1.6rem] !text-xs">2</span>
+          <span><span class="block text-sm font-bold">Message Match</span><span class="block text-xs leading-5 text-pm-muted">Advertentie naast pagina, per element.</span></span>
+        </li>
+        <li class="flex gap-3 border border-pm-line p-4">
+          <span class="doc-num !h-[1.85rem] !w-[1.6rem] !text-xs">3</span>
+          <span><span class="block text-sm font-bold">Verbeterpunten</span><span class="block text-xs leading-5 text-pm-muted">Op impact gesorteerd, met voorbeeldcopy.</span></span>
+        </li>
+        <li class="flex gap-3 border border-pm-line p-4">
+          <span class="doc-num !h-[1.85rem] !w-[1.6rem] !text-xs">4</span>
+          <span><span class="block text-sm font-bold">Marketeer Briefing</span><span class="block text-xs leading-5 text-pm-muted">Quick wins, maandplan en een A/B-test.</span></span>
+        </li>
+      </ol>
+      <p class="mt-6 text-xs text-pm-muted">Klaar? Download als PDF of Word, of plak het in Google Docs.</p>
+    </div>
+  </template>
+
+  <!-- Wachten op de eerste regels: skelet in plaats van een leeg document -->
+  <template id="waiting-state">
+    <div class="doc">
+      <div class="doc-top">
+        <img src="pureminds-logo.webp" alt="Pure Minds" class="doc-logo" />
+        <p class="doc-kicker"><strong>CRO BRIEFING</strong>wordt geschreven</p>
+      </div>
+      <p class="mt-8 text-sm text-pm-muted">Pagina ophalen en analyseren&hellip; de eerste regels verschijnen meestal binnen een halve minuut.</p>
+      <div class="mt-6 space-y-3" aria-hidden="true">
+        <div class="shimmer h-8 w-2/3"></div>
+        <div class="grid grid-cols-2 gap-3 pt-2"><div class="shimmer h-16"></div><div class="shimmer h-16"></div></div>
+        <div class="shimmer mt-6 h-5 w-1/3"></div>
+        <div class="shimmer h-4 w-full"></div>
+        <div class="shimmer h-4 w-11/12"></div>
+        <div class="shimmer h-4 w-4/5"></div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Wachtwoordscherm: verschijnt alleen als APP_PASSWORD op de server is ingesteld -->
+  <div id="password-overlay" class="hidden fixed inset-0 z-50 bg-[#10283c]/60 backdrop-blur-sm items-center justify-center p-6">
+    <form id="password-form" class="card border-t-[3px] border-t-pm-cyan w-full max-w-sm p-6 space-y-4">
+      <div>
+        <h2 class="text-lg font-bold">Wachtwoord vereist<span class="text-pm-cyan">.</span></h2>
+        <p class="mt-1 text-sm text-pm-muted">Deze tool is afgeschermd. Vraag het wachtwoord aan je collega.</p>
+      </div>
+      <label for="password-input" class="sr-only">Wachtwoord</label>
+      <input type="password" id="password-input" required autocomplete="current-password" placeholder="Wachtwoord" class="input" />
+      <p id="password-error" class="hidden text-sm font-semibold text-pm-magenta"></p>
+      <button type="submit" class="btn btn-primary w-full px-4 py-3 text-sm">doorgaan</button>
+    </form>
+  </div>
+
+  <script src="report.js"></script>
+  <script src="pdf.js"></script>
+  <script src="word.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
